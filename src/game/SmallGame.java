@@ -12,9 +12,11 @@ public class SmallGame extends JFrame {
         setSize(GAME_WIDTH + 14, GAME_HEIGHT + 36);
         setLocationRelativeTo(null);
 
-        GamePanel gamePanel = new GamePanel();
-        add(gamePanel);
+        GamePanel panel = new GamePanel();
+        Thread panelThread = new Thread(panel);
+        panelThread.start();
 
+        add(panel);
         setVisible(true);
     }
 

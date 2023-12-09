@@ -8,11 +8,13 @@ class Player {
     private int x;
     private int y;
     private int score;
+    private int distance;
 
     public Player(int x, int y) {
         this.x = x;
         this.y = y;
         this.score = 0;
+        this.distance = 0;
     }
 
     public int getX() {
@@ -27,8 +29,16 @@ class Player {
         return score;
     }
 
+    public int getDistance() {
+        return distance;
+    }
+
     public void incrementScore() {
         score++;
+    }
+
+    public void incrementDistance() {
+        distance += (int) (0.1 * GamePanel.OBSTACLE_SPEED);
     }
 
     public void move(int dx, int dy) {

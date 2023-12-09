@@ -11,24 +11,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-class GamePanel extends JPanel implements ActionListener, KeyListener {
-    private static final int OBSTACLE_SPEED = 10;
-    private static final int POINT_SPEED = 7;
+class GamePanel extends JPanel implements ActionListener, KeyListener, Runnable {
+    public static final int OBSTACLE_SPEED = 10;
+    public static final int POINT_SPEED = 7;
     private Player player;
     private List<Point> points;
     private List<Obstacle> obstacles;
     private boolean gameRunning;
 
     public GamePanel() {
-        setPreferredSize(new Dimension(SmallGame.GAME_WIDTH, SmallGame.GAME_HEIGHT));
-        player = new Player(50, 300);
+        player = new Player(50, 200);
         points = new ArrayList<>();
         obstacles = new ArrayList<>();
         gameRunning = false;
 
+        setPreferredSize(new Dimension(SmallGame.GAME_WIDTH, SmallGame.GAME_HEIGHT));
         setFocusable(true);
         addKeyListener(this);
+    }
 
+    @Override
+    public void run() {
         Timer timer = new Timer(15, this);
         timer.start();
 
@@ -53,26 +56,20 @@ class GamePanel extends JPanel implements ActionListener, KeyListener {
         obstacleTimer.start();
     }
 
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if(gameRunning) {
+            updateGame();
+            if(gameRunning) {
+                player.incrementDistance();
+            }
+        }
+    }
+
     private void updateGame() {
+        moveObstacles();
+        movePoints();
         checkCollisions();
-
-        Iterator<Obstacle> obstacleIterator = obstacles.iterator();
-        while (obstacleIterator.hasNext()) {
-            Obstacle obstacle = obstacleIterator.next();
-            obstacle.move(-OBSTACLE_SPEED);
-            if(obstacle.getX() + obstacle.getWidth() <= 0) {
-                obstacleIterator.remove();
-            }
-        }
-
-        Iterator<Point> pointIterator = points.iterator();
-        while (pointIterator.hasNext()) {
-            Point point = pointIterator.next();
-            point.move(-POINT_SPEED);
-            if(point.getX() + Point.POINT_WIDTH <= 0) {
-                pointIterator.remove();
-            }
-        }
 
         repaint();
     }
@@ -96,9 +93,33 @@ class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
     }
 
+    private void moveObstacles() {
+        Iterator<Obstacle> obstacleIterator = obstacles.iterator();
+        while (obstacleIterator.hasNext()) {
+            Obstacle obstacle = obstacleIterator.next();
+            obstacle.move(-OBSTACLE_SPEED);
+            if(obstacle.getX() + obstacle.getWidth() <= 0) {
+                obstacleIterator.remove();
+            }
+        }
+    }
+
+    private void movePoints() {
+        Iterator<Point> pointIterator = points.iterator();
+        while (pointIterator.hasNext()) {
+            Point point = pointIterator.next();
+            point.move(-POINT_SPEED);
+            if(point.getX() + Point.POINT_WIDTH <= 0) {
+                pointIterator.remove();
+            }
+        }
+    }
+
     private void endGame() {
         gameRunning = false;
-        player = new Player(50, 300);
+        JOptionPane.showMessageDialog(this, "Score: " + player.getScore() + "\nDistance: " + player.getDistance(),
+                "Results", JOptionPane.INFORMATION_MESSAGE);
+        player = new Player(50, 200);
         points.clear();
         obstacles.clear();
     }
@@ -139,14 +160,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
 
         g.setColor(Color.WHITE);
-        g.drawString("Score: " + player.getScore(), 10, 20);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (gameRunning) {
-            updateGame();
-        }
+        g.drawString("Score: " + player.getScore() + "    Distance: " + player.getDistance(), 10, 20);
     }
 
     @Override
@@ -157,15 +171,22 @@ class GamePanel extends JPanel implements ActionListener, KeyListener {
             gameRunning = true;
         }
 
-        if (key == KeyEvent.VK_UP) {
-            player.move(0, -10);
-        } else if (key == KeyEvent.VK_DOWN) {
-            player.move(0, 10);
-        } else if (key == KeyEvent.VK_LEFT) {
-            player.move(-5, 0);
-        } else if (key == KeyEvent.VK_RIGHT) {
-            player.move(5, 0);
-        }
+        Thread keyThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(key == KeyEvent.VK_UP) {
+                    player.move(0, -10);
+                } else if(key == KeyEvent.VK_DOWN) {
+                    player.move(0, 10);
+                } else if(key == KeyEvent.VK_RIGHT) {
+                    player.move(5, 0);
+                } else if(key == KeyEvent.VK_LEFT) {
+                    player.move(-5, 0);
+                }
+            }
+        });
+
+        keyThread.start();
     }
 
     @Override
